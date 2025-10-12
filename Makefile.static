@@ -1,4 +1,10 @@
 # This universal Makefile is prepared for different platforms. 
+VPATH=src
+vpath %.cpp src
+
+%.o: %.cpp
+	$(CC) -c $< $(CFLAGS)
+
 # Please comment out the related flags. The platforms are:
 # 
 # OS_Linux 
@@ -31,7 +37,7 @@ LDFLAGS = -lGL -lGLU -lSDL -lSDL_image -lSDL_mixer -lfreetype
 # CFLAGS = -Wall -O2 -DOS_MAC .....
 # LDFLAGS = .....
 
-CC = g++
+CC = arm-linux-gnueabihf-g++
 BIN = etr
 OBJ = main.o game_config.o ogl.o tux.o audio.o winsys.o \
 particles.o mathlib.o splash_screen.o intro.o racing.o \

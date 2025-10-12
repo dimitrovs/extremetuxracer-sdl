@@ -1,52 +1,29 @@
-/* --------------------------------------------------------------------
-EXTREME TUXRACER
-
-Copyright (C) 2010 Extreme Tuxracer Team
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
----------------------------------------------------------------------*/
-
-/*
-If you want to add a new option, do this:
-First add the option to the TParam struct (game_config.h).
-
-Then edit the below functions:
-
-- LoadConfigFile. Use
-	SPIntN for integer and boolean values
-	SPStrN for strings.
-	The first value is always 'line', the second defines the tag within the
-	brackets [ ], and the last value is the default.
-
-- SetConfigDefaults. These values are used as long as no options file exists.
-	It's a good idea to use the same values as the defaults in LoadConfigFile.
-
-- SaveConfigFile. See the other entries; it should be self-explanatory.
-	If an options file exists, you will have to change any value at runtime
-	on the configuration screen to overwrite the file. Then you will see the
-	new entry.
-*/
-
-#ifdef HAVE_CONFIG_H
-#include <etr_config.h>
-#endif
-
-#ifdef HAVE_SYS_STAT_H
+#include <string>
+// --- Extreme Tux Racer (Miyoo/Onion port) header cleanup ---
+#include <cerrno>
+#include <sys/types.h>
 #include <sys/stat.h>
-#endif
+#include <unistd.h>
+#include <pwd.h>
+
+// Where the packaged assets will live on device (adjust if you prefer)
 
 #include "game_config.h"
 #include "spx.h"
 #include "translation.h"
-
+// --- end header ---
+static std::string GetAppDir(){
+  char buf[1024];
+  ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf)-1);
+  if(n > 0){
+    buf[n] = 0;
+    std::string p(buf);
+    size_t slash = p.find_last_of('/');
+    if(slash != std::string::npos) p.resize(slash);
+    return p;
+  }
+  return std::string(".");
+}
 TParam param;
 
 
@@ -90,7 +67,7 @@ void LoadConfigFile() {
 
 void SetConfigDefaults() {
 	param.fullscreen = true;
-	param.res_type = 0; // 0=auto / 1=800x600 / 2=1024x768 ...
+	param.res_type = 0; // 0=auto / 1=640x480 / 2=800x600 ...
 	param.framerate = 60;
 	param.perf_level = 3;	// detail level
 	param.language = string::npos; // If language is set to npos, ETR will try to load default system language
@@ -149,10 +126,10 @@ void SaveConfigFile() {
 	AddIntItem(liste, "fullscreen", param.fullscreen);
 	liste.Add();
 
-	AddComment(liste, "Screen resolution [0...9]");
-	AddComment(liste, "0 = auto, 1 = 800x600, 2 = 1024x768");
-	AddComment(liste, "3 = 1152x864, 4 = 1280x960, 5 = 1280x1024");
-	AddComment(liste, "6 = 1360x768, 7 = 1400x1050, 8 = 1440x900, 9=1680x1050");
+	AddComment(liste, "Screen resolution [0...10]");
+	AddComment(liste, "0 = auto, 1 = 640x480, 2 = 800x600, 3 = 1024x768");
+	AddComment(liste, "4 = 1152x864, 5 = 1280x960, 6 = 1280x1024");
+	AddComment(liste, "7 = 1360x768, 8 = 1400x1050, 9 = 1440x900, 10=1680x1050");
 	AddIntItem(liste, "res_type", (int)param.res_type);
 	liste.Add();
 
@@ -310,8 +287,8 @@ void InitConfig() {
 	param.config_dir += ".etr";
 	// or: param.config_dir = param.prog_dir + SEP "config";
 	if (!DirExists(param.config_dir.c_str()))
-		mkdir(param.config_dir.c_str(), 0775);
-	param.data_dir = ETR_DATA_DIR;
+		::mkdir(param.config_dir.c_str(), 0775);
+	param.data_dir = GetAppDir() + SEP "data";
 	param.data_dir += SEP;
 	param.data_dir += "etr";
 	// param.data_dir = param.prog_dir + SEP "data";

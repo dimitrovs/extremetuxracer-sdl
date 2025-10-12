@@ -38,7 +38,7 @@ TVector2i cursor_pos(0, 0);
 CWinsys Winsys;
 
 CWinsys::CWinsys()
-	: auto_resolution(800, 600) {
+	: auto_resolution(640, 480) {
 	screen = NULL;
 
 	joystick = NULL;
@@ -46,15 +46,16 @@ CWinsys::CWinsys()
 	joystick_active = false;
 
 	resolutions[0] = TScreenRes(0, 0);
-	resolutions[1] = TScreenRes(800, 600);
-	resolutions[2] = TScreenRes(1024, 768);
-	resolutions[3] = TScreenRes(1152, 864);
-	resolutions[4] = TScreenRes(1280, 960);
-	resolutions[5] = TScreenRes(1280, 1024);
-	resolutions[6] = TScreenRes(1360, 768);
-	resolutions[7] = TScreenRes(1400, 1050);
-	resolutions[8] = TScreenRes(1440, 900);
-	resolutions[9] = TScreenRes(1680, 1050);
+	resolutions[1] = TScreenRes(640, 480);
+	resolutions[2] = TScreenRes(800, 600);
+	resolutions[3] = TScreenRes(1024, 768);
+	resolutions[4] = TScreenRes(1152, 864);
+	resolutions[5] = TScreenRes(1280, 960);
+	resolutions[6] = TScreenRes(1280, 1024);
+	resolutions[7] = TScreenRes(1360, 768);
+	resolutions[8] = TScreenRes(1400, 1050);
+	resolutions[9] = TScreenRes(1440, 900);
+	resolutions[10] = TScreenRes(1680, 1050);
 }
 
 const TScreenRes& CWinsys::GetResolution(size_t idx) const {
@@ -63,7 +64,7 @@ const TScreenRes& CWinsys::GetResolution(size_t idx) const {
 }
 
 string CWinsys::GetResName(size_t idx) const {
-	if (idx >= NUM_RESOLUTIONS) return "800 x 600";
+	if (idx >= NUM_RESOLUTIONS) return "640 x 480";
 	if (idx == 0) return ("auto");
 	string line = Int_StrN(resolutions[idx].width);
 	line += " x " + Int_StrN(resolutions[idx].height);
@@ -108,7 +109,7 @@ void CWinsys::SetupVideoMode(const TScreenRes& resolution_) {
 	              (resolution_.width, resolution_.height, bpp, video_flags)) == NULL) {
 		Message("couldn't initialize video",  SDL_GetError());
 		Message("set to 800 x 600");
-		screen = SDL_SetVideoMode(800, 600, bpp, video_flags);
+		screen = SDL_SetVideoMode(640, 480, bpp, video_flags);
 		param.res_type = 1;
 		SaveConfigFile();
 	}

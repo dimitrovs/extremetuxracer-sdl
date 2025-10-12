@@ -21,7 +21,7 @@ GNU General Public License for more details.
 #include "bh.h"
 #include <SDL/SDL.h>
 
-#define NUM_RESOLUTIONS 10
+#define NUM_RESOLUTIONS 11
 
 extern TVector2i cursor_pos;
 
