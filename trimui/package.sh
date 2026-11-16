@@ -14,8 +14,8 @@ find "$PORT/ExtremeTuxRacer/data" -name 'Makefile*' -delete
 cp /work/etr/COPYING "$PORT/ExtremeTuxRacer/licenses/COPYING.ExtremeTuxRacer-GPLv2"
 cp /work/etr/AUTHORS "$PORT/ExtremeTuxRacer/licenses/AUTHORS.ExtremeTuxRacer"
 cp /work/gl4es/LICENSE "$PORT/ExtremeTuxRacer/licenses/LICENSE.gl4es-MIT"
-# the screenshot is not shipped in the zip, so drop its line from the bundled README
-grep -v "screenshot.png" /work/etr/trimui/README.md > "$PORT/ExtremeTuxRacer/README.md"
+# the screenshots are not shipped in the zip, so drop that block from the bundled README
+grep -vE "screenshots/|^\| \| \|$|^\|---\|---\|$|captured from the device framebuffer" /work/etr/trimui/README.md > "$PORT/ExtremeTuxRacer/README.md"
 cp "/work/etr/trimui/Extreme Tux Racer.sh" "$PORT/"
 cp "/work/etr/trimui/Extreme Tux Racer.png" "$PORT/Imgs/"
 

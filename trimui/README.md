@@ -5,7 +5,14 @@ Smart Pro (tg5040, aarch64, PowerVR GLES2). The game is ported to SDL2 with a
 GLES2 context, and [gl4es](https://github.com/ptitSeb/gl4es) is linked in
 statically to translate the fixed-function OpenGL calls.
 
-![Extreme Tux Racer running on a Trimui Smart Pro](screenshot.png)
+![Racing down Bunny Hill on a Trimui Smart Pro](screenshots/race-3.jpg)
+
+| | |
+|---|---|
+| ![Main menu](screenshots/menu.jpg) | ![Course selection](screenshots/course-select.jpg) |
+| ![Race start](screenshots/race-1.jpg) | ![Off the track](screenshots/race-2.jpg) |
+
+All screenshots were captured from the device framebuffer.
 
 ## Status
 
