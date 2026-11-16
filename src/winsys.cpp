@@ -28,7 +28,6 @@ GNU General Public License for more details.
 #include "textures.h"
 #include "spx.h"
 #include "course.h"
-#include <SDL/SDL_syswm.h>
 #include <iostream>
 
 #define USE_JOYSTICK true
@@ -39,7 +38,10 @@ CWinsys Winsys;
 
 CWinsys::CWinsys()
 	: auto_resolution(800, 600) {
-	screen = NULL;
+	window = NULL;
+	key_repeat = false;
+	glcontext = NULL;
+	controller = NULL;
 
 	joystick = NULL;
 	numJoysticks = 0;
@@ -75,56 +77,51 @@ float CWinsys::CalcScreenScale() const {
 	else return (resolution.height / 768.f);
 }
 
+extern "C" {
+#include <gl4esinit.h>
+}
+
+static void* etr_gl_getproc(const char* name) {
+	return SDL_GL_GetProcAddress(name);
+}
+
+static void etr_gl_fbsize(int* w, int* h) {
+	*w = Winsys.resolution.width;
+	*h = Winsys.resolution.height;
+}
+
 void CWinsys::SetupVideoMode(const TScreenRes& resolution_) {
-	int bpp = 0;
-	Uint32 video_flags = SDL_OPENGL;
-	if (param.fullscreen) video_flags |= SDL_FULLSCREEN;
-	switch (param.bpp_mode) {
-		case 0:
-			bpp = 0;
-			break;
-		case 1:
-			bpp = 16;
-			break;
-		case 2:
-			bpp = 32;
-			break;
-		default:
-			param.bpp_mode = 0;
-			bpp = 0;
-	}
+	if (window == NULL) {
+		// The handheld panel has one fixed mode: always go fullscreen at native size.
+		SDL_DisplayMode dm;
+		int w = resolution_.width, h = resolution_.height;
+		if (SDL_GetCurrentDisplayMode(0, &dm) == 0 && dm.w > 0 && dm.h > 0) {
+			w = dm.w;
+			h = dm.h;
+		}
+		if (w <= 0 || h <= 0) { w = 1280; h = 720; }
 
-#ifdef _WIN32
-	SDL_SysWMinfo info;
-	SDL_VERSION(&info.version);
-	SDL_GetWMInfo(&info);
-	HDC tempDC = GetDC(info.window);
-	HGLRC tempRC = wglCreateContext(tempDC);
-	SetLastError(0);
-	wglShareLists(info.hglrc, tempRC); // Share resources with old context
-#endif
-
-	if ((screen = SDL_SetVideoMode
-	              (resolution_.width, resolution_.height, bpp, video_flags)) == NULL) {
-		Message("couldn't initialize video",  SDL_GetError());
-		Message("set to 800 x 600");
-		screen = SDL_SetVideoMode(800, 600, bpp, video_flags);
-		param.res_type = 1;
-		SaveConfigFile();
-	}
-
-#ifdef _WIN32
-	SDL_VERSION(&info.version);
-	SDL_GetWMInfo(&info);
-	wglShareLists(tempRC, info.hglrc); // Share resources with new context
-	wglDeleteContext(tempRC);
-#endif
-
-	SDL_Surface *surf = SDL_GetVideoSurface();
-	resolution.width = surf->w;
-	resolution.height = surf->h;
-	if (resolution.width == 0 && resolution.height == 0) {
+		window = SDL_CreateWindow(WINDOW_TITLE, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+		                          w, h, SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN);
+		if (window == NULL) {
+			Message("couldn't create window", SDL_GetError());
+			exit(1);
+		}
+		glcontext = SDL_GL_CreateContext(window);
+		if (glcontext == NULL) {
+			Message("couldn't create GL context", SDL_GetError());
+			exit(1);
+		}
+		SDL_GL_MakeCurrent(window, glcontext);
+		SDL_GL_SetSwapInterval(1);
+		SDL_GL_GetDrawableSize(window, &w, &h);
+		resolution.width = w;
+		resolution.height = h;
 		auto_resolution = resolution;
+
+		set_getprocaddress(etr_gl_getproc);
+		set_getmainfbsize(etr_gl_fbsize);
+		initialize_gl4es();
 	}
 	scale = CalcScreenScale();
 	if (param.use_quad_scale) scale = sqrt(scale);
@@ -155,11 +152,18 @@ void CWinsys::InitJoystick() {
 		return;
 	}
 	joystick_active = true;
+	if (SDL_IsGameController(0)) controller = SDL_GameControllerOpen(0);
+	Message("Joystick: ", SDL_JoystickName(joystick));
+	Message(controller ? "using SDL game controller mapping" : "using raw joystick mapping");
 }
 
 void CWinsys::Init() {
-	Uint32 sdl_flags = SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE | SDL_INIT_TIMER;
-	if (SDL_Init(sdl_flags) < 0) Message("Could not initialize SDL");
+	Uint32 sdl_flags = SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER;
+	if (SDL_Init(sdl_flags) < 0) Message("Could not initialize SDL", SDL_GetError());
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 #if defined (USE_STENCIL_BUFFER)
@@ -169,19 +173,19 @@ void CWinsys::Init() {
 	SetupVideoMode(GetResolution(param.res_type));
 	Reshape(resolution.width, resolution.height);
 
-	SDL_WM_SetCaption(WINDOW_TITLE, WINDOW_TITLE);
 	if (USE_JOYSTICK) InitJoystick();
 //	SDL_EnableUNICODE (1);
 }
 
 void CWinsys::KeyRepeat(bool repeat) {
-	if (repeat)
-		SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
-	else SDL_EnableKeyRepeat(0, 0);
+	key_repeat = repeat;
 }
 
 void CWinsys::CloseJoystick() {
-	if (joystick_active) SDL_JoystickClose(joystick);
+	if (controller) SDL_GameControllerClose(controller);
+	else if (joystick_active) SDL_JoystickClose(joystick);
+	controller = NULL;
+	joystick_active = false;
 }
 
 void CWinsys::Quit() {
@@ -191,6 +195,10 @@ void CWinsys::Quit() {
 	Audio.Close();		// frees music and sound as well
 	if (g_game.argument < 1) Players.SavePlayers();
 	SDL_Quit();
+	// Trimui port: the GL context is gone now, so skip the static destructors
+	// that would still try to delete textures through it (crash on exit).
+	fflush(NULL);
+	_exit(0);
 }
 
 void CWinsys::Terminate() {
@@ -204,13 +212,10 @@ void CWinsys::PrintJoystickInfo() const {
 		return;
 	}
 	PrintStr("");
-	PrintStr(SDL_JoystickName(0));
+	PrintStr(SDL_JoystickName(joystick));
 	int num_buttons = SDL_JoystickNumButtons(joystick);
 	cout << "Joystick has " << num_buttons << " button" << (num_buttons == 1 ? "" : "s") << '\n';
 	int num_axes = SDL_JoystickNumAxes(joystick);
 	cout << "Joystick has " << num_axes << " ax" << (num_axes == 1 ? "i" : "e") << "s\n\n";
 }
 
-unsigned char *CWinsys::GetSurfaceData() const {
-	return (unsigned char*)screen->pixels;
-}

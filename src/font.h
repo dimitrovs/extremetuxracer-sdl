@@ -35,6 +35,9 @@ class FTFont;
 class CFont {
 private:
 	vector<FTFont*> fonts;
+	vector<string> fontpaths;
+	mutable map<pair<size_t, int>, FTFont*> sized;
+	FTFont* GetSized(size_t font, int size) const;
 	map<string, size_t> fontindex;
 	Orientation forientation;
 

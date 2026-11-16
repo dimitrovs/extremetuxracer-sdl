@@ -24,8 +24,8 @@ GNU General Public License for more details.
 #include "course.h"
 #include "winsys.h"
 #include "ogl.h"
-#include <SDL/SDL_image.h>
-#include <GL/glu.h>
+#include <SDL_image.h>
+#include "glu_compat.h"
 #include <fstream>
 #include <cctype>
 
@@ -118,7 +118,7 @@ bool CImage::ReadFrameBuffer_PPM() {
 	DisposeData();
 	data  = new unsigned char[nx * ny * depth];
 
-	glReadBuffer(GL_FRONT);
+	glReadBuffer(GL_BACK);
 
 	for (int i=0; i<viewport[3]; i++) {
 		glReadPixels(viewport[0], viewport[1] + viewport[3] - 1 - i,
@@ -136,7 +136,7 @@ void CImage::ReadFrameBuffer_TGA() {
 	DisposeData();
 	data  = new unsigned char[nx * ny * depth];
 
-	glReadBuffer(GL_FRONT);
+	glReadBuffer(GL_BACK);
 	glReadPixels(0, 0, nx, ny, GL_BGR, GL_UNSIGNED_BYTE, data);
 }
 
@@ -147,7 +147,7 @@ void CImage::ReadFrameBuffer_BMP() {
 
 	DisposeData();
 	data  = new unsigned char[nx * ny * depth];
-	glReadBuffer(GL_FRONT);
+	glReadBuffer(GL_BACK);
 	glReadPixels(0, 0, nx, ny, GL_BGRA, GL_UNSIGNED_BYTE, data);
 }
 
@@ -351,7 +351,8 @@ bool TTexture::LoadMipmap(const string& filename, bool repeatable) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 
-	gluBuild2DMipmaps(GL_TEXTURE_2D, texImage.depth, texImage.nx, texImage.ny, format, GL_UNSIGNED_BYTE, texImage.data);
+	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+	glTexImage2D(GL_TEXTURE_2D, 0, format, texImage.nx, texImage.ny, 0, format, GL_UNSIGNED_BYTE, texImage.data);
 	return true;
 }
 bool TTexture::LoadMipmap(const string& dir, const string& filename, bool repeatable) {

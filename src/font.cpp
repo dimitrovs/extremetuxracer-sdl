@@ -103,6 +103,10 @@ void CFont::Clear() {
 	for (size_t i = 0; i < fonts.size(); i++)
 		delete fonts[i];
 	fonts.clear();
+	for (map<pair<size_t, int>, FTFont*>::iterator it = sized.begin(); it != sized.end(); ++it)
+		delete it->second;
+	sized.clear();
+	fontpaths.clear();
 	fontindex.clear();
 }
 
@@ -139,8 +143,24 @@ wstring CFont::UnicodeStr(const char *s) {
 //					public
 // --------------------------------------------------------------------
 
+// Trimui/GLES port: texture fonts instead of glDrawPixels pixmap fonts. A texture
+// font rebuilds its glyph atlas whenever the face size changes, so keep one
+// instance per (font, size).
+FTFont* CFont::GetSized(size_t font, int size) const {
+	if (size < 1) size = 1;
+	pair<size_t, int> key(font, size);
+	map<pair<size_t, int>, FTFont*>::iterator it = sized.find(key);
+	if (it != sized.end()) return it->second;
+	FTFont* f = new FTGLTextureFont(fontpaths[font].c_str());
+	f->FaceSize(size);
+	f->CharMap(ft_encoding_unicode);
+	sized[key] = f;
+	return f;
+}
+
 int CFont::LoadFont(const string& name, const char *path) {
-	fonts.push_back(new FTGLPixmapFont(path));
+	fonts.push_back(new FTGLTextureFont(path));
+	fontpaths.push_back(path);
 	if (fonts.back()->Error()) {
 		Message("Failed to open font");
 		return -1;
@@ -231,7 +251,9 @@ void CFont::DrawText(float x, float y, const T* text, size_t font, float size) c
 	if (font >= fonts.size()) return;
 
 	glPushMatrix();
-	fonts[font]->FaceSize((int)size);
+	glPushAttrib(GL_ENABLE_BIT);
+	glEnable(GL_TEXTURE_2D);
+	FTFont* fnt = GetSized(font, (int)size);
 	glColor(curr_col);
 
 	float left;
@@ -240,12 +262,13 @@ void CFont::DrawText(float x, float y, const T* text, size_t font, float size) c
 	if (left < 0) left = 0;
 
 	if (forientation == OR_TOP) {
-		glRasterPos2i((int)left, (int)(Winsys.resolution.height - curr_size - y));
+		glTranslatef((int)left, (int)(Winsys.resolution.height - curr_size - y), 0);
 	} else {
-		glRasterPos2i((int)left, (int)y);
+		glTranslatef((int)left, (int)y, 0);
 	}
 
-	fonts[font]->Render(text);
+	fnt->Render(text);
+	glPopAttrib();
 	glPopMatrix();
 }
 template void CFont::DrawText<char>(float x, float y, const char* text, size_t font, float size) const; // instanciate
@@ -302,8 +325,7 @@ void CFont::GetTextSize(const wchar_t *text, float &x, float &y, size_t font, fl
 	if (font >= fonts.size()) { x = 0; y = 0; return; }
 
 	float llx, lly, llz, urx, ury, urz;
-	fonts[font]->FaceSize((int)size);
-	fonts[font]->BBox(text, llx, lly, llz, urx, ury, urz);
+	GetSized(font, (int)size)->BBox(text, llx, lly, llz, urx, ury, urz);
 	x = urx - llx;
 	y = ury - lly;
 }
@@ -315,8 +337,7 @@ void CFont::GetTextSize(const char *text, float &x, float &y, size_t font, float
 	if (font >= fonts.size()) { x = 0; y = 0; return; }
 
 	float llx, lly, llz, urx, ury, urz;
-	fonts[font]->FaceSize((int)size);
-	fonts[font]->BBox(text, llx, lly, llz, urx, ury, urz);
+	GetSized(font, (int)size)->BBox(text, llx, lly, llz, urx, ury, urz);
 	x = urx - llx;
 	y = ury - lly;
 #endif

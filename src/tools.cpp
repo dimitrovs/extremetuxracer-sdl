@@ -29,7 +29,7 @@ GNU General Public License for more details.
 #include "tool_char.h"
 #include "env.h"
 #include "winsys.h"
-#include <GL/glu.h>
+#include "glu_compat.h"
 
 CGluCamera GluCamera;
 

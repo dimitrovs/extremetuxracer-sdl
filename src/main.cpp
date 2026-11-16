@@ -69,6 +69,7 @@ void InitGame(int argc, char **argv) {
 #endif
 
 int main(int argc, char **argv) {
+	setvbuf(stdout, NULL, _IOLBF, 0);
 	// ****************************************************************
 	cout << "\n----------- Extreme Tux Racer " ETR_VERSION_STRING " ----------------";
 	cout << "\n----------- (C) 2010-2014 Extreme Tuxracer Team  --------\n\n";

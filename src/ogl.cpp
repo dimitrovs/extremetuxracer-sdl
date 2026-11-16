@@ -22,7 +22,7 @@ GNU General Public License for more details.
 #include "ogl.h"
 #include "spx.h"
 #include "winsys.h"
-#include <GL/glu.h>
+#include "glu_compat.h"
 #include <stack>
 
 static const struct {
@@ -128,27 +128,23 @@ void PrintGLInfo() {
 }
 
 void set_material_diffuse(const TColor& diffuse_colour) {
-	GLint mat_amb_diff[4] = {
-		static_cast<GLint>(diffuse_colour.r * INT_MAX),
-		static_cast<GLint>(diffuse_colour.g * INT_MAX),
-		static_cast<GLint>(diffuse_colour.b * INT_MAX),
-		static_cast<GLint>(diffuse_colour.a * INT_MAX)
+	GLfloat mat_amb_diff[4] = {
+		(GLfloat)diffuse_colour.r, (GLfloat)diffuse_colour.g,
+		(GLfloat)diffuse_colour.b, (GLfloat)diffuse_colour.a
 	};
-	glMaterialiv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat_amb_diff);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, mat_amb_diff);
 }
 
 void set_material(const TColor& diffuse_colour, const TColor& specular_colour, float specular_exp) {
 	set_material_diffuse(diffuse_colour);
 
-	GLint mat_specular[4] = {
-		static_cast<GLint>(specular_colour.r * INT_MAX),
-		static_cast<GLint>(specular_colour.g * INT_MAX),
-		static_cast<GLint>(specular_colour.b * INT_MAX),
-		static_cast<GLint>(specular_colour.a * INT_MAX)
+	GLfloat mat_specular[4] = {
+		(GLfloat)specular_colour.r, (GLfloat)specular_colour.g,
+		(GLfloat)specular_colour.b, (GLfloat)specular_colour.a
 	};
-	glMaterialiv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, mat_specular);
 
-	glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, specular_exp);
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, specular_exp);
 }
 
 void ClearRenderContext() {

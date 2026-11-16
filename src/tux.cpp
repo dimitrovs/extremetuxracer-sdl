@@ -30,7 +30,7 @@ still shaped with spheres.
 #include "textures.h"
 #include "course.h"
 #include "physics.h"
-#include <GL/glu.h>
+#include "glu_compat.h"
 #include <algorithm>
 
 #define MAX_ARM_ANGLE2 30.0
@@ -364,12 +364,7 @@ void CCharShape::CreateMaterial(const string& line) {
 // --------------------------------------------------------------------
 
 void CCharShape::DrawCharSphere(int num_divisions) {
-	GLUquadricObj *qobj = gluNewQuadric();
-	gluQuadricDrawStyle(qobj, GLU_FILL);
-	gluQuadricOrientation(qobj, GLU_OUTSIDE);
-	gluQuadricNormals(qobj, GLU_SMOOTH);
-	gluSphere(qobj, 1.0, (GLint)2.0 * num_divisions, num_divisions);
-	gluDeleteQuadric(qobj);
+	etrDrawUnitSphere(2 * num_divisions, num_divisions);
 }
 
 void CCharShape::DrawNodes(const TCharNode *node) {

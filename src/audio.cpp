@@ -20,7 +20,7 @@ GNU General Public License for more details.
 
 #include "audio.h"
 #include "spx.h"
-#include <SDL/SDL.h>
+#include <SDL.h>
 
 // the global instances of the 3 audio classes
 CAudio Audio;
@@ -37,7 +37,7 @@ CAudio::CAudio() {
 
 void CAudio::Open() {
 	// first initialize audio (SDL, not SDL_Mixer).
-	if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+	if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0) {
 		Message("Couldn't initialize SDL Audio", SDL_GetError());
 		return;
 	}

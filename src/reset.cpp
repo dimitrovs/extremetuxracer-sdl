@@ -82,6 +82,9 @@ void CReset::Loop(double time_step) {
 			}
 		} // for
 
+		// Trimui port: guard against courses whose reset points are not in NocollArr
+		if (last_reset >= Course.NocollArr.size()) last_reset = 0;
+
 		if (last_reset == 0) {
 			ctrl->cpos.x = Course.GetDimensions().x/2.0;
 			ctrl->cpos.z = min(ctrl->cpos.z + 10, -1.0);

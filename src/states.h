@@ -19,7 +19,7 @@ GNU General Public License for more details.
 #define STATES_H
 
 #include "bh.h"
-#include <SDL/SDL.h>
+#include <SDL.h>
 
 
 class CWinsys;
@@ -63,7 +63,7 @@ public:
 	virtual void Motion(int x, int y) {}
 	virtual void Jaxis(int axis, float value) {}
 	virtual void Jbutt(int button, int state) {}
-	virtual void Keyb_spec(SDL_keysym sym, bool release) {}
+	virtual void Keyb_spec(SDL_Keysym sym, bool release) {}
 	virtual void Exit() {}
 };
 

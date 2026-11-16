@@ -23,6 +23,9 @@ GNU General Public License for more details.
 // --------------------------------------------------------------------
 
 #include <cstdint>
+#include <climits>
+#include <cstring>
+#include <sys/stat.h>
 #include <cstddef>
 #include <string>
 
@@ -62,7 +65,7 @@ GNU General Public License for more details.
 #	include <pwd.h>
 #	include <dirent.h>
 #	include <sys/time.h>
-#	include <GL/glx.h>
+#	include <GL/glext.h>
 #	define SEP "/"
 #endif
 
